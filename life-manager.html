@@ -1,0 +1,1053 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+<title>Life Manager — All-in-One Offline Planner</title>
+<style>
+:root{
+  --bg:#0f1720; --panel:#0b1220; --muted:#98a0b3; --accent:#4f46e5; --accent-2:#06b6d4; --card:#0f1726;
+  --success:#16a34a; --danger:#ef4444; --orange:#f97316; --glass: rgba(255,255,255,0.03);
+  --max-width:1200px; --radius:12px; --shadow: 0 6px 18px rgba(2,6,23,0.7);
+  color-scheme: dark;
+}
+*{box-sizing:border-box;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+html,body{height:100%;margin:0;background:
+ linear-gradient(180deg,#071025 0%, #07172a 30%, #081428 100%); color:#e6eef8;}
+.app{max-width:var(--max-width);margin:0 auto;padding:88px 12px 48px;}
+.header{
+  position:fixed;left:0;right:0;top:0;background:linear-gradient(180deg, rgba(2,6,23,0.7), rgba(2,6,23,0.45));
+  backdrop-filter: blur(8px); padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.03);z-index:30;
+  display:flex;align-items:center;gap:12px;
+}
+.brand{display:flex;gap:12px;align-items:center;}
+.logo{
+  width:54px;height:54px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  display:flex;align-items:center;justify-content:center;font-weight:700;color:white;font-size:18px;box-shadow:var(--shadow);
+}
+.title{font-size:16px;font-weight:700;margin-right:8px}
+.header-right{margin-left:auto;display:flex;gap:8px;align-items:center;}
+.btn{background:var(--glass);border:1px solid rgba(255,255,255,0.03);color:var(--muted);padding:8px 10px;border-radius:10px;font-size:13px;}
+.primary{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:white;border:none;box-shadow:0 8px 30px rgba(79,70,229,0.15)}
+.icon{width:20px;height:20px;display:inline-block;vertical-align:middle}
+.layout{display:grid;grid-template-columns: 1fr 360px;gap:12px;align-items:start;}
+@media (max-width:900px){ .layout{grid-template-columns: 1fr; padding-bottom:180px;} .header{padding:8px;} .app{padding-top:100px;} }
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:var(--radius);padding:12px;border:1px solid rgba(255,255,255,0.03);box-shadow:var(--shadow);}
+.sidebar{position:sticky;top:76px;height:calc(100vh - 86px);overflow:auto;padding-bottom:120px;}
+.live-dash{display:flex;flex-direction:column;gap:8px;position:relative;}
+.dash-row{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);}
+.time-big{font-size:22px;font-weight:700}
+.small{font-size:12px;color:var(--muted)}
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
+.stat{padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);display:flex;flex-direction:column}
+.stat .num{font-weight:700;font-size:16px}
+.quick-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.qbtn{flex:1 1 calc(50% - 8px);padding:12px;border-radius:10px;text-align:center;background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));font-weight:600;color:white}
+@media (max-width:900px){ .qbtn{flex:1 1 48%} }
+
+.main-column{display:flex;flex-direction:column;gap:12px}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px}
+.search{flex:1;display:flex;gap:8px}
+.input{background:rgba(255,255,255,0.02);border-radius:10px;padding:8px 10px;border:1px solid rgba(255,255,255,0.03);color:#e6eef8;width:100%}
+.filters{display:flex;gap:6px}
+.list{display:flex;flex-direction:column;gap:8px}
+.task{display:flex;gap:10px;align-items:center;padding:10px;border-radius:10px;background:linear-gradient(180deg, rgba(0,0,0,0.18), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.02)}
+.task .left{flex:0 0 46px;height:46px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700}
+.task .body{flex:1;display:flex;flex-direction:column}
+.task .meta{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted)}
+.badge{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.02);font-size:12px;color:var(--muted)}
+.tag{display:inline-block;padding:4px 6px;border-radius:6px;background:rgba(255,255,255,0.02);font-size:11px;margin-right:6px}
+.controls .btn{padding:8px 10px;border-radius:10px}
+.footer-actions{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-top:6px}
+.modal-backdrop{position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(2,6,23,0.7);display:none;align-items:center;justify-content:center;z-index:50;padding:12px}
+.modal{width:100%;max-width:820px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:12px;border:1px solid rgba(255,255,255,0.03)}
+.form-grid{display:grid;grid-template-columns:1fr 240px;gap:8px}
+@media (max-width:900px){ .form-grid{grid-template-columns:1fr} }
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:6px}
+.label{font-size:12px;color:var(--muted)}
+textarea.input{min-height:90px;resize:vertical}
+.small-muted{font-size:12px;color:var(--muted)}
+.row{display:flex;gap:8px;align-items:center}
+.habit-calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.habit-day{padding:8px;border-radius:8px;text-align:center;background:rgba(255,255,255,0.02);font-size:12px}
+.habit-day.done{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:white}
+.reminder{display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;background:rgba(255,255,255,0.02)}
+.small-pill{padding:6px 8px;border-radius:999px;background:rgba(255,255,255,0.02);font-size:12px}
+.kv{display:flex;justify-content:space-between;gap:8px}
+.controls .select, .input, .btn{font-size:13px}
+.history-list{max-height:220px;overflow:auto;padding:8px;border-radius:8px;background:rgba(255,255,255,0.01)}
+.link{color:var(--accent);text-decoration:underline;cursor:pointer}
+.footer{margin-top:20px;color:var(--muted);font-size:13px;text-align:center}
+.small-action{font-size:12px;color:var(--muted);border:none;background:none}
+.separator{height:1px;background:rgba(255,255,255,0.03);margin:8px 0;border-radius:2px}
+.file-preview{max-width:100%;border-radius:8px;margin-top:8px}
+.dragging{opacity:0.6;border:2px dashed rgba(255,255,255,0.06)}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="brand">
+    <div class="logo">LM</div>
+    <div>
+      <div class="title">Life Manager</div>
+      <div class="small">Offline personal life & time management</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="btn" id="exportBtn" title="Export data">Export</button>
+    <button class="btn" id="importBtn" title="Import data">Import</button>
+    <button class="btn" id="undoBtn" title="Undo">Undo</button>
+    <button class="btn" id="redoBtn" title="Redo">Redo</button>
+    <button class="btn primary" id="newTaskBtn">+ New Task</button>
+  </div>
+</div>
+
+<main class="app">
+  <div class="layout">
+    <section class="main-column">
+      <div class="card controls">
+        <div style="flex:1;display:flex;gap:8px;align-items:center">
+          <div class="search" style="flex:1">
+            <input id="searchInput" class="input" placeholder="Search tasks, tags, notes..." />
+          </div>
+          <div class="filters">
+            <select id="filterCategory" class="input select">
+              <option value="">All Categories</option>
+            </select>
+            <select id="sortSelect" class="input select">
+              <option value="order">Order</option>
+              <option value="start_desc">Start Time ↓</option>
+              <option value="start_asc">Start Time ↑</option>
+              <option value="priority">Priority</option>
+              <option value="duration">Duration</option>
+              <option value="created_desc">Created ↓</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="font-weight:700">Tasks</div>
+          <div class="small-muted">Tap a task to start/stop. Drag to reorder.</div>
+        </div>
+        <div id="tasksList" class="list" aria-live="polite"></div>
+        <div class="footer-actions">
+          <button class="btn" id="archiveCompleted">Archive Completed</button>
+          <button class="btn" id="clearArchived">Clear Archived</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:700">Journal</div>
+          <button class="btn" id="newJournalBtn">+ New Entry</button>
+        </div>
+        <div id="journalList" style="margin-top:8px"></div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:700">Habits</div>
+          <div class="small-muted">Track daily habits and streaks</div>
+        </div>
+        <div id="habitsContainer" style="margin-top:8px"></div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:700">Reminders</div>
+          <div class="small-muted">Pending / upcoming / overdue</div>
+        </div>
+        <div id="remindersList" style="margin-top:8px"></div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:700">Analytics</div>
+          <div class="small-muted">Daily breakdown & productivity</div>
+        </div>
+        <div id="analytics" style="margin-top:8px"></div>
+      </div>
+
+    </section>
+
+    <aside class="sidebar card">
+      <div class="live-dash">
+        <div class="dash-row">
+          <div>
+            <div id="dateLine" class="small"></div>
+            <div class="time-big" id="timeBig">--:--</div>
+            <div class="small" id="timeSec">--:--:--</div>
+          </div>
+          <div style="text-align:right">
+            <div class="small">Active</div>
+            <div id="activeTaskName" class="small-muted">None</div>
+            <div id="activeDuration" class="small-muted">00:00:00</div>
+          </div>
+        </div>
+
+        <div class="stat-grid" style="margin-top:8px">
+          <div class="stat"><div class="small">Total Today</div><div class="num" id="totalToday">0h 0m</div></div>
+          <div class="stat"><div class="small">Study Today</div><div class="num" id="studyToday">0h 0m</div></div>
+          <div class="stat"><div class="small">Breaks</div><div class="num" id="breakToday">0h 0m</div></div>
+          <div class="stat"><div class="small">Exercise</div><div class="num" id="exerciseToday">0h 0m</div></div>
+        </div>
+
+        <div class="separator"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:700">Quick Actions</div><div class="small-muted">One-tap start</div></div>
+        <div class="quick-actions" id="quickActions"></div>
+
+        <div class="separator"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:700">Categories</div><button class="btn" id="manageCats">Manage</button></div>
+        <div id="catList" style="margin-top:8px;display:flex;flex-direction:column;gap:6px"></div>
+
+        <div class="separator"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:700">History</div><div class="small-muted">Undo/Redo stack</div></div>
+        <div class="history-list" id="historyList"></div>
+
+      </div>
+    </aside>
+  </div>
+
+  <div class="footer">Life Manager — All data stored locally. Use Export/Import to move data between devices.</div>
+</main>
+
+<!-- Modal backdrop -->
+<div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
+  <div class="modal" id="modal">
+    <!-- dynamic content -->
+  </div>
+</div>
+
+<script>
+/* IndexedDB helper (promise-based, small)
+   Stores object stores: tasks, categories, reminders, habits, journal, settings, history
+*/
+const DB_NAME = 'life_manager_db_v1';
+const DB_VERSION = 1;
+let db;
+function openDB(){
+  return new Promise((res,rej)=>{
+    const r = indexedDB.open(DB_NAME, DB_VERSION);
+    r.onupgradeneeded = e => {
+      const d = e.target.result;
+      if(!d.objectStoreNames.contains('tasks')) d.createObjectStore('tasks',{keyPath:'id'});
+      if(!d.objectStoreNames.contains('categories')) d.createObjectStore('categories',{keyPath:'id'});
+      if(!d.objectStoreNames.contains('reminders')) d.createObjectStore('reminders',{keyPath:'id'});
+      if(!d.objectStoreNames.contains('habits')) d.createObjectStore('habits',{keyPath:'id'});
+      if(!d.objectStoreNames.contains('journal')) d.createObjectStore('journal',{keyPath:'id'});
+      if(!d.objectStoreNames.contains('settings')) d.createObjectStore('settings',{keyPath:'key'});
+      if(!d.objectStoreNames.contains('history')) d.createObjectStore('history',{keyPath:'id',autoIncrement:true});
+    };
+    r.onsuccess = e => { db = e.target.result; res(db); };
+    r.onerror = e => rej(e.target.error);
+  });
+}
+function idbPut(store, value){ return new Promise((res,rej)=>{ const tx = db.transaction(store,'readwrite'); tx.objectStore(store).put(value); tx.oncomplete=()=>res(true); tx.onerror=()=>rej(tx.error); });}
+function idbGetAll(store){ return new Promise((res,rej)=>{ const tx = db.transaction(store,'readonly'); const req = tx.objectStore(store).getAll(); req.onsuccess=()=>res(req.result); req.onerror=()=>rej(req.error); });}
+function idbGet(store,key){ return new Promise((res,rej)=>{ const tx = db.transaction(store,'readonly'); const req = tx.objectStore(store).get(key); req.onsuccess=()=>res(req.result); req.onerror=()=>rej(req.error); });}
+function idbDelete(store,key){ return new Promise((res,rej)=>{ const tx = db.transaction(store,'readwrite'); tx.objectStore(store).delete(key); tx.oncomplete=()=>res(true); tx.onerror=()=>rej(tx.error); });}
+
+/* Utilities */
+const uid = (pfx='id') => pfx+'_'+Math.random().toString(36).slice(2,9);
+const nowISO = ()=> new Date().toISOString();
+function formatDurationSec(s){
+  if(!s) return '00:00:00';
+  const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60;
+  return [h,m,sec].map(v=>String(v).padStart(2,'0')).join(':');
+}
+function humanHoursMin(totalSec){
+  const h=Math.floor(totalSec/3600), m=Math.round((totalSec%3600)/60);
+  return h+'h '+m+'m';
+}
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+function todayRange(){
+  const s = new Date(); s.setHours(0,0,0,0);
+  const e = new Date(); e.setHours(23,59,59,999);
+  return [s,e];
+}
+
+/* Models and defaults */
+const defaultCategories = [
+  {id:'cat_study',name:'Study',color:'#4f46e5',icon:'📚',goalHours:4,visible:true,quick:true},
+  {id:'cat_break',name:'Break',color:'#f97316',icon:'☕',goalHours:1,visible:true,quick:true},
+  {id:'cat_exercise',name:'Exercise',color:'#16a34a',icon:'🏃',goalHours:1,visible:true,quick:true},
+  {id:'cat_read',name:'Reading',color:'#06b6d4',icon:'📖',goalHours:1,visible:true,quick:true},
+  {id:'cat_sleep',name:'Sleep',color:'#0ea5a3',icon:'😴',goalHours:8,visible:true,quick:false}
+];
+
+let STORE = {tasks:[],categories:[],reminders:[],habits:[],journal:[],settings:{},history:[]};
+let HISTORY_STACK = JSON.parse(localStorage.getItem('lm_history')||'[]');
+let REDO_STACK = JSON.parse(localStorage.getItem('lm_redo')||'[]');
+
+/* Persistence helpers */
+async function saveStateSnapshot(action, payload){
+  const snapshot = {id: uid('snap'), timestamp: nowISO(), action, payload};
+  await idbPut('history', snapshot);
+  // push to in-memory list and localStorage for UI
+  HISTORY_STACK.push(snapshot);
+  localStorage.setItem('lm_history', JSON.stringify(HISTORY_STACK.slice(-200)));
+  REDO_STACK = []; localStorage.setItem('lm_redo', JSON.stringify(REDO_STACK));
+  renderHistory();
+}
+async function persistItem(storeName, item){
+  await idbPut(storeName, item);
+  await refreshStore();
+  saveStateSnapshot('put_'+storeName, {id:item.id});
+}
+async function deleteItem(storeName, id){
+  await idbDelete(storeName, id);
+  await refreshStore();
+  saveStateSnapshot('delete_'+storeName, {id});
+}
+
+/* Load all data */
+async function refreshStore(){
+  STORE.tasks = (await idbGetAll('tasks')) || [];
+  STORE.categories = (await idbGetAll('categories')) || [];
+  STORE.reminders = (await idbGetAll('reminders')) || [];
+  STORE.habits = (await idbGetAll('habits')) || [];
+  STORE.journal = (await idbGetAll('journal')) || [];
+  // settings: map by key
+  const allSettings = (await idbGetAll('settings')) || [];
+  STORE.settings = {}; allSettings.forEach(s => STORE.settings[s.key]=s.value);
+  renderAll();
+}
+
+/* Bootstrapping default categories */
+async function ensureDefaults(){
+  const cats = await idbGetAll('categories');
+  if(!cats || cats.length===0){
+    for(const c of defaultCategories) await idbPut('categories', c);
+  }
+  // ensure root settings
+  const s = await idbGet('settings','app');
+  if(!s) await idbPut('settings',{key:'app', value:{createdAt:nowISO()}});
+}
+
+/* UI bindings */
+const elements = {};
+function $id(id){ return document.getElementById(id); }
+
+function renderAll(){
+  renderCategories();
+  renderQuickActions();
+  renderTasks();
+  renderHabits();
+  renderReminders();
+  renderJournal();
+  renderStats();
+  renderHistory();
+}
+
+/* Tasks render, create/edit */
+function renderTasks(){
+  const list = $id('tasksList'); list.innerHTML='';
+  const q = $id('searchInput').value.trim().toLowerCase();
+  const catFilter = $id('filterCategory').value;
+  let tasks = STORE.tasks.filter(t=>!t.archived);
+  if(catFilter) tasks = tasks.filter(t=>t.categoryId===catFilter);
+  if(q) tasks = tasks.filter(t=>{
+    return (t.name||'').toLowerCase().includes(q) || (t.tags||[]).join(' ').toLowerCase().includes(q) || (t.notes||'').toLowerCase().includes(q);
+  });
+  const sort = $id('sortSelect').value;
+  if(sort==='start_desc') tasks.sort((a,b)=> (b.startTime||'').localeCompare(a.startTime||''));
+  else if(sort==='start_asc') tasks.sort((a,b)=> (a.startTime||'').localeCompare(b.startTime||''));
+  else if(sort==='priority') tasks.sort((a,b)=> (b.priority||0)-(a.priority||0));
+  else if(sort==='duration') tasks.sort((a,b)=> (b.manualDuration||b.duration||0)-(a.manualDuration||a.duration||0));
+  // default order by index or createdAt
+  tasks.forEach((t, idx) => {
+    const el = document.createElement('div'); el.className='task'; el.draggable=true;
+    el.dataset.id = t.id;
+    el.innerHTML = `
+      <div class="left" style="background:${t.color||'#222'}">${t.icon||'〰'}</div>
+      <div class="body">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:700">${escapeHtml(t.name||'Untitled')}</div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <div class="badge">${t.status||'idle'}</div>
+            <div class="small-muted">${t.priority?('P'+t.priority):''}</div>
+          </div>
+        </div>
+        <div class="meta">
+          <div class="small-muted">${t.categoryName||''}</div>
+          <div class="tag">${t.tags?t.tags.join(', '):''}</div>
+          <div style="margin-left:auto" class="small-muted">${formatDurationSec(Math.floor((t.manualDuration||t.duration||0)))}</div>
+        </div>
+      </div>
+    `;
+    // click to toggle start/stop
+    el.addEventListener('click', async (ev)=>{
+      ev.stopPropagation();
+      await toggleTaskRunning(t.id);
+    });
+    // edit on long press or context menu
+    el.addEventListener('contextmenu', ev=>{ ev.preventDefault(); openTaskEditor(t.id); });
+    // drag events for reorder
+    el.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/plain', t.id); el.classList.add('dragging'); });
+    el.addEventListener('dragend', e=>{ el.classList.remove('dragging'); });
+    el.addEventListener('dragover', e=>{ e.preventDefault(); });
+    el.addEventListener('drop', async e=>{
+      e.preventDefault();
+      const srcId = e.dataTransfer.getData('text/plain');
+      await reorderTask(srcId, t.id);
+    });
+    list.appendChild(el);
+  });
+}
+
+/* escape helper */
+function escapeHtml(s){ if(!s) return ''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* Task operations */
+async function toggleTaskRunning(id){
+  const t = STORE.tasks.find(x=>x.id===id); if(!t) return;
+  // stop any other running task
+  const running = STORE.tasks.find(x=>x.running);
+  const now = new Date();
+  if(running && running.id !== id){
+    running.running = false;
+    running.endTime = now.toISOString();
+    running.duration = (running.duration||0) + Math.floor((new Date(running.endTime)-new Date(running.startTime))/1000);
+    running.status='paused';
+    await idbPut('tasks', running);
+  }
+  if(!t.running){
+    t.running = true; t.startTime = now.toISOString(); t.status='running';
+  } else {
+    t.running = false; t.endTime = now.toISOString();
+    t.duration = (t.duration||0) + Math.floor((new Date(t.endTime)-new Date(t.startTime))/1000);
+    t.status='stopped';
+  }
+  await idbPut('tasks', t);
+  saveStateSnapshot('toggle_run', {id:t.id});
+  await refreshStore();
+}
+
+/* Reorder by swapping sortIndex */
+async function reorderTask(srcId, destId){
+  const a = STORE.tasks.find(x=>x.id===srcId), b = STORE.tasks.find(x=>x.id===destId);
+  if(!a||!b) return;
+  const ai = a.order||0, bi = b.order||0;
+  // swap orders
+  const temp = a.order; a.order = b.order; b.order = temp;
+  await idbPut('tasks', a); await idbPut('tasks', b);
+  saveStateSnapshot('reorder', {a:a.id,b:b.id});
+  await refreshStore();
+}
+
+/* Open task editor modal */
+function openTaskEditor(taskId){
+  const modal = $id('modal'); const backdrop=$id('modalBackdrop');
+  const isNew = !taskId;
+  const task = isNew ? {id:uid('task'), name:'', categoryId:'', categoryName:'', color:'#222', icon:'📝', tags:[],priority:1,status:'todo',notes:'',createdAt:nowISO(),attachments:[],customFields:{}} : JSON.parse(JSON.stringify(STORE.tasks.find(t=>t.id===taskId)));
+  modal.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="font-weight:700">${isNew?'New Task':'Edit Task'}</div>
+      <div><button class="btn" id="closeModal">Close</button></div>
+    </div>
+    <div class="form-grid">
+      <div>
+        <div class="field"><div class="label">Name</div><input id="te_name" class="input" value="${escapeHtml(task.name)}" /></div>
+        <div class="field"><div class="label">Description / Notes</div><textarea id="te_notes" class="input">${escapeHtml(task.notes)}</textarea></div>
+        <div class="field"><div class="label">Tags (comma separated)</div><input id="te_tags" class="input" value="${(task.tags||[]).join(', ')}" /></div>
+        <div class="row">
+          <div style="flex:1" class="field"><div class="label">Priority (1-5)</div><input id="te_priority" type="number" min="1" max="5" class="input" value="${task.priority||1}" /></div>
+          <div style="flex:1" class="field"><div class="label">Status</div><input id="te_status" class="input" value="${escapeHtml(task.status||'todo')}" /></div>
+        </div>
+        <div class="field">
+          <div class="label">Attachments (images/files)</div>
+          <input id="te_attach" type="file" multiple />
+          <div id="te_attach_preview"></div>
+        </div>
+      </div>
+      <div>
+        <div class="field"><div class="label">Category</div>
+          <select id="te_cat" class="input select">
+            <option value="">(none)</option>
+          </select>
+        </div>
+        <div class="field"><div class="label">Icon</div><input id="te_icon" class="input" value="${escapeHtml(task.icon||'📝')}" /></div>
+        <div class="field"><div class="label">Color</div><input id="te_color" type="color" class="input" value="${task.color||'#222222'}" /></div>
+        <div class="field"><div class="label">Manual Duration Override (HH:MM:SS)</div><input id="te_manual" class="input" placeholder="00:00:00" value="${formatDurationSec(task.manualDuration||0)}" /></div>
+        <div class="field"><div class="label">Location Notes</div><input id="te_location" class="input" value="${escapeHtml(task.location||'')}" /></div>
+        <div class="field"><div class="label">Mood / Energy</div><input id="te_mood" class="input" value="${escapeHtml(task.mood||'')}" /></div>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <button class="btn primary" id="saveTask">Save</button>
+          <button class="btn" id="deleteTask">${isNew?'Cancel':'Delete'}</button>
+        </div>
+      </div>
+    </div>
+  `;
+  // populate categories
+  const catSelect = modal.querySelector('#te_cat');
+  STORE.categories.forEach(c=> {
+    const opt = document.createElement('option'); opt.value=c.id; opt.textContent=c.name; if(c.id===task.categoryId) opt.selected=true;
+    catSelect.appendChild(opt);
+  });
+
+  backdrop.style.display='flex';
+  modal.querySelector('#closeModal').addEventListener('click', ()=>{ backdrop.style.display='none';});
+  modal.querySelector('#deleteTask').addEventListener('click', async ()=>{
+    backdrop.style.display='none';
+    if(!isNew){
+      await deleteItem('tasks', task.id);
+      await refreshStore();
+    }
+  });
+  modal.querySelector('#saveTask').addEventListener('click', async ()=>{
+    // gather values
+    const name = modal.querySelector('#te_name').value.trim();
+    task.name = name || 'Untitled';
+    task.notes = modal.querySelector('#te_notes').value;
+    task.tags = modal.querySelector('#te_tags').value.split(',').map(s=>s.trim()).filter(Boolean);
+    task.priority = Number(modal.querySelector('#te_priority').value)||1;
+    task.status = modal.querySelector('#te_status').value||'todo';
+    const catId = modal.querySelector('#te_cat').value;
+    task.categoryId = catId;
+    const cat = STORE.categories.find(c=>c.id===catId);
+    task.categoryName = cat?cat.name:'';
+    task.icon = modal.querySelector('#te_icon').value||'📝';
+    task.color = modal.querySelector('#te_color').value||'#222';
+    task.location = modal.querySelector('#te_location').value||'';
+    task.mood = modal.querySelector('#te_mood').value||'';
+    // manual duration parse
+    const md = modal.querySelector('#te_manual').value.trim();
+    const parts = md.split(':').map(p=>Number(p)||0);
+    const sec = (parts[0]||0)*3600 + (parts[1]||0)*60 + (parts[2]||0);
+    task.manualDuration = sec;
+    task.updatedAt = nowISO();
+    if(isNew){ task.createdAt = nowISO(); }
+    await idbPut('tasks', task);
+    backdrop.style.display='none';
+    await saveStateSnapshot('save_task', {id:task.id});
+    await refreshStore();
+  });
+
+  // attachments
+  const attachIn = modal.querySelector('#te_attach');
+  attachIn.addEventListener('change', async (e)=>{
+    const files = Array.from(e.target.files || []);
+    const previews = modal.querySelector('#te_attach_preview');
+    for(const f of files){
+      const data = await fileToDataURL(f);
+      task.attachments = task.attachments || [];
+      task.attachments.push({name:f.name,type:f.type,data});
+      const img = document.createElement('img'); img.src=data; img.className='file-preview'; previews.appendChild(img);
+    }
+  });
+}
+
+/* Helper: file to base64 */
+function fileToDataURL(file){
+  return new Promise((res)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(file); });
+}
+
+/* Categories */
+function renderCategories(){
+  const sel = $id('filterCategory'); sel.innerHTML='<option value="">All Categories</option>';
+  const cl = $id('catList'); cl.innerHTML='';
+  STORE.categories.forEach(c=>{
+    const opt=document.createElement('option'); opt.value=c.id; opt.textContent=c.name; sel.appendChild(opt);
+    const el=document.createElement('div'); el.style.display='flex'; el.style.justifyContent='space-between'; el.style.alignItems='center';
+    el.innerHTML = `<div style="display:flex;gap:8px;align-items:center"><div style="width:28px;height:28px;border-radius:6px;background:${c.color};display:flex;align-items:center;justify-content:center">${c.icon||'■'}</div><div>${c.name}</div></div><div class="small-muted">${c.goalHours||0}h</div>`;
+    cl.appendChild(el);
+  });
+}
+
+/* Quick actions */
+function renderQuickActions(){
+  const container = $id('quickActions'); container.innerHTML='';
+  // default buttons from categories with quick flag
+  const quickCats = STORE.categories.filter(c=>c.quick);
+  const baseQuick = [
+    {id:'qa_study',name:'Study',icon:'📚',categoryId:(quickCats[0]&&quickCats[0].id)||''},
+    {id:'qa_break',name:'Break',icon:'☕',categoryId:(quickCats[1]&&quickCats[1].id)||''},
+    {id:'qa_walk',name:'Walking',icon:'🚶'},
+    {id:'qa_ex',name:'Exercise',icon:'🏋️'},
+    {id:'qa_read',name:'Reading',icon:'📖'},
+    {id:'qa_sleep',name:'Sleep',icon:'😴'}
+  ];
+  baseQuick.forEach(q=>{
+    const btn = document.createElement('button'); btn.className='qbtn'; btn.textContent = `${q.icon||''} ${q.name}`;
+    btn.addEventListener('click', async ()=> {
+      // end any running tasks, create new task and start immediately
+      await startQuickTask(q.name, q.icon, q.categoryId||'');
+    });
+    container.appendChild(btn);
+  });
+}
+
+/* Start a quick task */
+async function startQuickTask(name, icon, categoryId){
+  const now = new Date();
+  // stop current running
+  const running = STORE.tasks.find(t=>t.running);
+  if(running){
+    running.running=false; running.endTime = now.toISOString();
+    running.duration = (running.duration||0) + Math.floor((new Date(running.endTime)-new Date(running.startTime))/1000);
+    await idbPut('tasks', running);
+  }
+  const id = uid('task');
+  const cat = STORE.categories.find(c=>c.id===categoryId);
+  const t = {id, name, categoryId:categoryId||'', categoryName:cat?cat.name:'', icon:icon||'📝', color:cat?cat.color:'#444', createdAt:now.toISOString(), startTime:now.toISOString(), running:true, status:'running', tags:[]};
+  await idbPut('tasks', t);
+  saveStateSnapshot('quick_start',{id});
+  await refreshStore();
+}
+
+/* Reminders engine */
+function renderReminders(){
+  const list = $id('remindersList'); list.innerHTML='';
+  const now = new Date();
+  const pending = STORE.reminders.filter(r=>!r.disabled);
+  // categorize by state
+  const overdue = pending.filter(r=>isReminderDue(r, now) && !r.completed);
+  const dueSoon = pending.filter(r=>isDueSoon(r, now) && !r.completed);
+  const upcoming = pending.filter(r=>!isReminderDue(r, now) && !isDueSoon(r, now) && !r.completed);
+  const completed = STORE.reminders.filter(r=>r.completed);
+
+  const makeRow = (r)=>{
+    const el=document.createElement('div'); el.className='reminder';
+    el.innerHTML = `<div style="flex:1"><div style="font-weight:700">${r.name}</div><div class="small-muted">${r.timestr||r.schedule||''} ${r.notes?('- '+r.notes):''}</div></div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+        <div class="small-pill">${r.state||'pending'}</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn" data-id="${r.id}" data-act="snooze">Snooze</button>
+          <button class="btn" data-id="${r.id}" data-act="toggle">${r.completed?'Undo':'Done'}</button>
+        </div>
+      </div>`;
+    // actions
+    el.querySelectorAll('button').forEach(b=>{
+      b.addEventListener('click', async (ev)=>{
+        const act=b.dataset.act; const id=b.dataset.id;
+        if(act==='snooze'){ await snoozeReminder(id, 10); } // default 10 min
+        if(act==='toggle'){ await toggleReminderComplete(id); }
+      });
+    });
+    return el;
+  };
+
+  if(overdue.length){
+    const h=document.createElement('div'); h.style.fontWeight=700; h.textContent='Overdue'; list.appendChild(h);
+    overdue.forEach(r=> list.appendChild(makeRow({...r,state:'overdue'})));
+  }
+  if(dueSoon.length){
+    const h=document.createElement('div'); h.style.fontWeight=700; h.textContent='Due Soon'; list.appendChild(h);
+    dueSoon.forEach(r=> list.appendChild(makeRow({...r,state:'due_soon'})));
+  }
+  if(upcoming.length){
+    const h=document.createElement('div'); h.style.fontWeight=700; h.textContent='Upcoming'; list.appendChild(h);
+    upcoming.slice(0,6).forEach(r=> list.appendChild(makeRow({...r,state:'upcoming'})));
+  }
+  if(completed.length){
+    const h=document.createElement('div'); h.style.fontWeight=700; h.textContent='Completed'; list.appendChild(h);
+    completed.slice(0,6).forEach(r=> list.appendChild(makeRow({...r,state:'completed'})));
+  }
+}
+
+/* Reminder checking utilities */
+function parseSchedule(spec){
+  // simple parse: supports 'one-time:YYYY-MM-DDTHH:MM', 'daily:HH:MM', 'weekly:mon,tue:HH:MM', 'interval:min'
+  if(!spec) return null;
+  const parts = spec.split(':');
+  const type = parts[0];
+  return {type, rest:parts.slice(1).join(':')};
+}
+function isReminderDue(r, date=new Date()){
+  if(r.disabled) return false;
+  if(r.completed && !r.repeat) return false;
+  // one-time
+  if(r.type==='one-time'){
+    if(!r.at) return false;
+    return new Date(r.at) <= date && !r.completed;
+  }
+  if(r.type==='daily'){
+    // check time today
+    const [h,m] = (r.time||'00:00').split(':').map(Number);
+    const cand = new Date(date); cand.setHours(h,m,0,0);
+    const last = r.lastFired ? new Date(r.lastFired) : null;
+    if(cand <= date && (!last || last < new Date(cand.toDateString()))) return true;
+    return false;
+  }
+  if(r.type==='weekly'){
+    // r.days = [0..6]
+    if(!r.days || !r.time) return false;
+    const today = date.getDay(); if(!r.days.includes(today)) return false;
+    const [h,m] = r.time.split(':').map(Number);
+    const cand = new Date(date); cand.setHours(h,m,0,0);
+    if(cand <= date && (!r.lastFired || new Date(r.lastFired) < new Date(cand.toDateString()))) return true;
+    return false;
+  }
+  if(r.type==='interval'){
+    // r.intervalMinutes
+    if(!r.intervalMinutes) return false;
+    if(!r.lastFired) return true;
+    const elapsed = (date - new Date(r.lastFired))/60000;
+    return elapsed >= r.intervalMinutes;
+  }
+  if(r.type==='monthly'){
+    // r.dom day-of-month and time
+    const dom = r.dom || 1;
+    const todayDom = date.getDate();
+    if(todayDom !== dom) return false;
+    const [h,m] = (r.time||'00:00').split(':').map(Number);
+    const cand = new Date(date); cand.setHours(h,m,0,0);
+    if(cand <= date && (!r.lastFired || new Date(r.lastFired) < new Date(cand.toDateString()))) return true;
+    return false;
+  }
+  return false;
+}
+function isDueSoon(r, date=new Date()){
+  if(r.disabled || r.completed) return false;
+  if(r.type==='daily' && r.time){
+    const [h,m]=r.time.split(':').map(Number);
+    const cand=new Date(date); cand.setHours(h,m,0,0);
+    const diff=(cand-date)/60000;
+    return diff>0 && diff<=30; // due within 30 minutes
+  }
+  return false;
+}
+async function snoozeReminder(id, minutes){
+  const r = STORE.reminders.find(x=>x.id===id); if(!r) return;
+  const due = new Date(); due.setMinutes(due.getMinutes()+minutes);
+  r.snoozedUntil = due.toISOString(); r.state='snoozed';
+  await idbPut('reminders', r); saveStateSnapshot('snooze_reminder',{id,minutes});
+  await refreshStore();
+}
+async function toggleReminderComplete(id){
+  const r = STORE.reminders.find(x=>x.id===id); if(!r) return;
+  r.completed = !r.completed;
+  if(r.completed){ r.lastFired = nowISO(); }
+  await idbPut('reminders', r); saveStateSnapshot('toggle_reminder',{id});
+  await refreshStore();
+}
+
+/* Reminder tick loop */
+async function reminderLoop(){
+  const now = new Date();
+  for(const r of STORE.reminders){
+    if(r.disabled) continue;
+    // snoozed check
+    if(r.snoozedUntil && new Date(r.snoozedUntil) > now) continue;
+    if(isReminderDue(r, now)){
+      // fire reminder
+      r.lastFired = now.toISOString();
+      // notification via alert + sound
+      if(Notification && Notification.permission==='granted'){
+        try{ new Notification('Reminder: '+r.name, {body:r.notes||'', silent:false}); }catch(e){}
+      } else {
+        // fallback toast (simple)
+        showToast('Reminder: '+r.name+' — '+(r.notes||''), 8000);
+      }
+      if(!r.repeat) r.completed = true;
+      await idbPut('reminders', r);
+      saveStateSnapshot('reminder_fired',{id:r.id});
+    }
+  }
+  await refreshStore();
+}
+
+/* Habits */
+function renderHabits(){
+  const container = $id('habitsContainer'); container.innerHTML='';
+  if(STORE.habits.length===0){
+    const btn = document.createElement('button'); btn.className='btn'; btn.textContent='Add Habit';
+    btn.addEventListener('click', ()=> openHabitEditor());
+    container.appendChild(btn);
+    return;
+  }
+  STORE.habits.forEach(h=>{
+    const el = document.createElement('div'); el.className='card'; el.style.marginBottom='8px';
+    const streak = computeHabitStreak(h);
+    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-weight:700">${h.name}</div><div class="small-muted">Streak: ${streak.current} | Best: ${streak.best}</div>
+    </div>
+    <div class="habit-calendar" id="hc_${h.id}"></div>
+    <div style="display:flex;gap:6px;margin-top:8px"><button class="btn" data-id="${h.id}" data-act="toggle">Toggle Today</button><button class="btn" data-id="${h.id}" data-act="edit">Edit</button></div>`;
+    container.appendChild(el);
+    // draw calendar: past 21 days
+    const cal = el.querySelector(`#hc_${h.id}`);
+    const today = new Date(); for(let i=20;i>=0;i--){
+      const d = new Date(); d.setDate(today.getDate()-i);
+      const key = d.toISOString().slice(0,10);
+      const done = (h.entries||[]).includes(key);
+      const dd = document.createElement('div'); dd.className='habit-day'+(done?' done':''); dd.textContent = d.toISOString().slice(5,10);
+      cal.appendChild(dd);
+    }
+    el.querySelectorAll('button').forEach(b=>{
+      b.addEventListener('click', async ()=>{
+        const id=b.dataset.id; const act=b.dataset.act;
+        if(act==='toggle'){ await toggleHabitToday(id); }
+        if(act==='edit'){ openHabitEditor(id); }
+      });
+    });
+  });
+}
+function computeHabitStreak(h){
+  const entries = new Set(h.entries||[]);
+  const today = new Date(); let cur=0,best=0,curStreak=0;
+  // compute best streak and current streak scanning last 365 days
+  let running=0;
+  for(let i=365;i>=0;i--){
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const k=d.toISOString().slice(0,10);
+    if(entries.has(k)){ running++; best=Math.max(best,running); }
+    else running=0;
+  }
+  // current streak
+  running=0;
+  for(let i=0;i<365;i++){
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const k=d.toISOString().slice(0,10);
+    if(entries.has(k)) running++; else break;
+  }
+  cur=running;
+  return {current:cur,best};
+}
+async function toggleHabitToday(id){
+  const h = STORE.habits.find(x=>x.id===id); if(!h) return;
+  const k = new Date().toISOString().slice(0,10);
+  h.entries = h.entries||[];
+  if(h.entries.includes(k)){ h.entries = h.entries.filter(x=>x!==k); }
+  else h.entries.push(k);
+  await idbPut('habits', h); saveStateSnapshot('habit_toggle',{id});
+  await refreshStore();
+}
+function openHabitEditor(id){
+  const modal = $id('modal'); const backdrop=$id('modalBackdrop');
+  const isNew = !id; const h = isNew ? {id:uid('habit'),name:'New Habit',entries:[],notes:'',goal:1} : JSON.parse(JSON.stringify(STORE.habits.find(x=>x.id===id)));
+  modal.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
+    <div style="font-weight:700">${isNew?'New Habit':'Edit Habit'}</div><button class="btn" id="closeModalX">Close</button>
+  </div>
+  <div style="margin-top:8px">
+    <div class="field"><div class="label">Name</div><input id="h_name" class="input" value="${escapeHtml(h.name)}" /></div>
+    <div class="field"><div class="label">Notes</div><textarea id="h_notes" class="input">${escapeHtml(h.notes)}</textarea></div>
+    <div class="field"><div class="label">Daily Goal (times)</div><input id="h_goal" type="number" class="input" value="${h.goal||1}" /></div>
+    <div style="display:flex;gap:8px"><button class="btn primary" id="h_save">Save</button><button class="btn" id="h_delete">${isNew?'Cancel':'Delete'}</button></div>
+  </div>`;
+  backdrop.style.display='flex';
+  modal.querySelector('#closeModalX').addEventListener('click', ()=>backdrop.style.display='none');
+  modal.querySelector('#h_delete').addEventListener('click', async ()=>{
+    backdrop.style.display='none';
+    if(!isNew) await deleteItem('habits', h.id);
+  });
+  modal.querySelector('#h_save').addEventListener('click', async ()=>{
+    h.name = modal.querySelector('#h_name').value.trim() || 'Habit';
+    h.notes = modal.querySelector('#h_notes').value;
+    h.goal = Number(modal.querySelector('#h_goal').value)||1;
+    await idbPut('habits', h);
+    backdrop.style.display='none';
+    saveStateSnapshot('habit_save',{id:h.id});
+    await refreshStore();
+  });
+}
+
+/* Journal */
+function renderJournal(){
+  const list = $id('journalList'); list.innerHTML='';
+  const sorted = STORE.journal.sort((a,b)=> (b.createdAt||'').localeCompare(a.createdAt||''));
+  sorted.forEach(j=>{
+    const el=document.createElement('div'); el.className='card'; el.style.marginBottom='8px';
+    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:700">${j.title||j.createdAt.slice(0,10)}</div><div class="small-muted">${new Date(j.createdAt).toLocaleString()}</div></div><div class="small-muted">${escapeHtml(j.content||'')}</div>`;
+    el.addEventListener('click', ()=> openJournalEditor(j.id));
+    list.appendChild(el);
+  });
+}
+function openJournalEditor(id){
+  const modal = $id('modal'); const backdrop=$id('modalBackdrop');
+  const isNew = !id; const j = isNew ? {id:uid('jr'),title:'',content:'',createdAt:nowISO()} : JSON.parse(JSON.stringify(STORE.journal.find(x=>x.id===id)));
+  modal.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:700">${isNew?'New Entry':'Edit Entry'}</div><button class="btn" id="closeJ">Close</button></div>
+    <div class="field"><div class="label">Title</div><input id="j_title" class="input" value="${escapeHtml(j.title)}" /></div>
+    <div class="field"><div class="label">Content</div><textarea id="j_content" class="input">${escapeHtml(j.content)}</textarea></div>
+    <div style="display:flex;gap:8px"><button class="btn primary" id="j_save">Save</button><button class="btn" id="j_delete">${isNew?'Cancel':'Delete'}</button></div>`;
+  backdrop.style.display='flex';
+  modal.querySelector('#closeJ').addEventListener('click', ()=>backdrop.style.display='none');
+  modal.querySelector('#j_delete').addEventListener('click', async ()=>{ backdrop.style.display='none'; if(!isNew) await deleteItem('journal', j.id); });
+  modal.querySelector('#j_save').addEventListener('click', async ()=>{ j.title=modal.querySelector('#j_title').value; j.content=modal.querySelector('#j_content').value; j.createdAt = j.createdAt || nowISO(); await idbPut('journal', j); backdrop.style.display='none'; saveStateSnapshot('journal_save',{id:j.id}); await refreshStore(); });
+}
+
+/* Stats */
+function renderStats(){
+  const [s,e] = todayRange();
+  // compute totals
+  let total=0, study=0, br=0, ex=0;
+  for(const t of STORE.tasks){
+    const dur = (t.duration||0) + (t.running ? Math.floor((new Date() - new Date(t.startTime))/1000) : 0) + (t.manualDuration||0);
+    // if created today or started today include:
+    const created = new Date(t.createdAt||t.startTime||0);
+    if(created >= s && created <= e){
+      total += dur;
+      if((t.categoryName||'').toLowerCase().includes('study')) study+=dur;
+      if((t.categoryName||'').toLowerCase().includes('break')) br+=dur;
+      if((t.categoryName||'').toLowerCase().includes('exercise')) ex+=dur;
+    }
+  }
+  $id('totalToday').textContent = humanHoursMin(total);
+  $id('studyToday').textContent = humanHoursMin(study);
+  $id('breakToday').textContent = humanHoursMin(br);
+  $id('exerciseToday').textContent = humanHoursMin(ex);
+  // active task
+  const active = STORE.tasks.find(t=>t.running);
+  if(active){ $id('activeTaskName').textContent = active.name; $id('activeDuration').textContent = formatDurationSec(Math.floor((new Date()-new Date(active.startTime))/1000)); }
+  else { $id('activeTaskName').textContent='None'; $id('activeDuration').textContent='00:00:00'; }
+}
+
+/* History UI */
+function renderHistory(){
+  const el = $id('historyList'); el.innerHTML='';
+  const last = HISTORY_STACK.slice(-50).reverse();
+  last.forEach(h=>{
+    const d = document.createElement('div'); d.style.padding='6px'; d.style.borderBottom='1px solid rgba(255,255,255,0.02)'; d.innerHTML = `<div style="font-weight:700">${h.action}</div><div class="small-muted">${new Date(h.timestamp).toLocaleString()}</div>`;
+    el.appendChild(d);
+  });
+}
+
+/* Undo/Redo simple implementation */
+async function undo(){
+  if(HISTORY_STACK.length===0) return;
+  const snap = HISTORY_STACK.pop(); REDO_STACK.push(snap);
+  localStorage.setItem('lm_history', JSON.stringify(HISTORY_STACK));
+  localStorage.setItem('lm_redo', JSON.stringify(REDO_STACK));
+  // naive: full reload from DB (no operation replay). For this app, we store history items in DB; we can't revert arbitrary operations automatically reliably here, so inform user and allow restore from export.
+  showToast('Undo applied (history moved to redo). For exact revert, use Export/Import state snapshot.',4000);
+  renderHistory();
+}
+async function redo(){
+  if(REDO_STACK.length===0) return;
+  const snap = REDO_STACK.pop(); HISTORY_STACK.push(snap);
+  localStorage.setItem('lm_history', JSON.stringify(HISTORY_STACK));
+  localStorage.setItem('lm_redo', JSON.stringify(REDO_STACK));
+  showToast('Redo moved to history.',3000);
+  renderHistory();
+}
+
+/* Simple toast */
+let toastTimer;
+function showToast(msg, ttl=3000){
+  let t = document.getElementById('lm_toast');
+  if(!t){ t=document.createElement('div'); t.id='lm_toast'; t.style.position='fixed'; t.style.left='50%'; t.style.transform='translateX(-50%)'; t.style.bottom='24px'; t.style.padding='10px 14px'; t.style.background='rgba(0,0,0,0.6)'; t.style.color='white'; t.style.borderRadius='8px'; t.style.zIndex=9999; document.body.appendChild(t); }
+  t.textContent=msg; t.style.display='block'; clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.style.display='none', ttl);
+}
+
+/* Export / Import */
+async function exportAll(){
+  const data = {
+    tasks: await idbGetAll('tasks'),
+    categories: await idbGetAll('categories'),
+    reminders: await idbGetAll('reminders'),
+    habits: await idbGetAll('habits'),
+    journal: await idbGetAll('journal'),
+    settings: await idbGetAll('settings'),
+    exportedAt: nowISO()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='life-manager-export-'+(new Date()).toISOString().slice(0,19).replace(/[:T]/g,'_')+'.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+async function importFile(file){
+  const txt = await file.text(); try{
+    const data = JSON.parse(txt);
+    // simple merge: write each item into db
+    for(const c of data.categories||[]) await idbPut('categories', c);
+    for(const t of data.tasks||[]) await idbPut('tasks', t);
+    for(const r of data.reminders||[]) await idbPut('reminders', r);
+    for(const h of data.habits||[]) await idbPut('habits', h);
+    for(const j of data.journal||[]) await idbPut('journal', j);
+    for(const s of data.settings||[]) await idbPut('settings', s);
+    showToast('Import complete',3000);
+    await refreshStore();
+  }catch(e){ showToast('Import failed: invalid file',4000); }
+}
+
+/* Helpers for UI wiring */
+function wireUI(){
+  $id('newTaskBtn').addEventListener('click', ()=> openTaskEditor());
+  $id('searchInput').addEventListener('input', debounce(()=>renderTasks(),200));
+  $id('sortSelect').addEventListener('change', ()=>renderTasks());
+  $id('filterCategory').addEventListener('change', ()=>renderTasks());
+  $id('exportBtn').addEventListener('click', ()=>exportAll());
+  $id('importBtn').addEventListener('click', ()=>{ const inp=document.createElement('input'); inp.type='file'; inp.accept='application/json'; inp.onchange=(e)=>importFile(e.target.files[0]); inp.click(); });
+  $id('undoBtn').addEventListener('click', ()=>undo());
+  $id('redoBtn').addEventListener('click', ()=>redo());
+  $id('archiveCompleted').addEventListener('click', async ()=>{ for(const t of STORE.tasks.filter(x=>x.completed)){ t.archived=true; await idbPut('tasks', t);} await refreshStore(); });
+  $id('clearArchived').addEventListener('click', async ()=>{ for(const t of STORE.tasks.filter(x=>x.archived)){ await idbDelete('tasks', t.id);} await refreshStore(); });
+  $id('newJournalBtn').addEventListener('click', ()=>openJournalEditor());
+  $id('manageCats').addEventListener('click', ()=>openCategoryManager());
+}
+
+/* Category manager */
+function openCategoryManager(){
+  const modal = $id('modal'); const backdrop = $id('modalBackdrop');
+  modal.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:700">Manage Categories</div><button class="btn" id="closeC">Close</button></div>
+  <div id="cm_list" style="margin-top:8px"></div>
+  <div style="display:flex;gap:8px;margin-top:8px"><button class="btn primary" id="cm_add">Add</button><button class="btn" id="cm_save">Save & Close</button></div>`;
+  backdrop.style.display='flex';
+  modal.querySelector('#closeC').addEventListener('click', ()=>backdrop.style.display='none');
+  const list = modal.querySelector('#cm_list');
+  function draw(){
+    list.innerHTML='';
+    for(const c of STORE.categories){
+      const row = document.createElement('div'); row.style.display='flex'; row.style.gap='8px'; row.style.alignItems='center'; row.style.marginBottom='6px';
+      row.innerHTML = `<input class="input cm_name" value="${escapeHtml(c.name)}" style="flex:1"/><input type="color" class="cm_color" value="${c.color||'#444444'}"/><input class="input cm_icon" value="${escapeHtml(c.icon||'')}" style="width:70px"/><input type="number" class="cm_goal" value="${c.goalHours||0}" style="width:70px"/><button class="btn cm_del">Del</button>`;
+      row.querySelector('.cm_del').addEventListener('click', async ()=>{ await idbDelete('categories', c.id); await refreshStore(); draw(); });
+      list.appendChild(row);
+    }
+  }
+  draw();
+  modal.querySelector('#cm_add').addEventListener('click', async ()=>{
+    const newc = {id:uid('cat'),name:'New',color:'#444444',icon:'📁',goalHours:0,visible:true,quick:false};
+    await idbPut('categories', newc);
+    await refreshStore(); draw();
+  });
+  modal.querySelector('#cm_save').addEventListener('click', async ()=>{
+    // read inputs and update categories
+    const rows = list.querySelectorAll('div');
+    let i=0;
+    for(const c of STORE.categories){
+      const r = rows[i];
+      if(!r) continue;
+      c.name = r.querySelector('.cm_name').value;
+      c.color = r.querySelector('.cm_color').value;
+      c.icon = r.querySelector('.cm_icon').value;
+      c.goalHours = Number(r.querySelector('.cm_goal').value)||0;
+      await idbPut('categories', c);
+      i++;
+    }
+    backdrop.style.display='none';
+    await refreshStore();
+  });
+}
+
+/* Utilities: debounce */
+function debounce(fn, delay=300){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), delay); }; }
+
+/* Time loop for dashboard & reminders */
+setInterval(()=>{ $id('timeBig').textContent = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); $id('timeSec').textContent = new Date().toLocaleTimeString(); $id('dateLine').textContent = new Date().toLocaleDateString([], {weekday:'long', year:'numeric', month:'short', day:'numeric'}); renderStats(); }, 1000);
+setInterval(()=>{ reminderLoop(); }, 15000); // check every 15 seconds
+
+/* notification permission */
+if("Notification" in window && Notification.permission!=='granted'){ Notification.requestPermission(); }
+
+/* init */
+(async function init(){
+  try{
+    await openDB();
+    await ensureDefaults();
+    await refreshStore();
+    wireUI();
+    renderAll();
+    // initial reminder tick
+    await reminderLoop();
+  }catch(e){
+    console.error('Init error', e);
+    showToast('Initialization error: '+e.message, 6000);
+  }
+})();
+
+/* Simple escape function for innerText safety */
+</script>
+</body>
+</html>
